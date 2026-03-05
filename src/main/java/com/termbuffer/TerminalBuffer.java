@@ -1,7 +1,9 @@
 package com.termbuffer;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 
 /**
  * TerminalBuffer — core data structure for a terminal emulator.
@@ -73,6 +75,26 @@ public class TerminalBuffer {
 
     public int getCursorCol() { return cursorCol; }
     public int getCursorRow() { return cursorRow; }
+
+    /**
+     * Write text at the current cursor position, overwriting existing cells.
+     * Stops at the right edge — no wrapping, no scrolling.
+     */
+    public void writeText(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            if (cursorCol >= width) break;
+            char ch = text.charAt(i);
+            screenLine(cursorRow).set(cursorCol, new Cell(ch, currentAttributes, false, false));
+            cursorCol++;
+        }
+        cursorCol = Math.min(cursorCol, width - 1);
+    }
+
+    private List<Line> screenAsList() { return new ArrayList<>(screen); }
+
+    private Line screenLine(int row) {
+        return screenAsList().get(row);
+    }
 
     @Override
     public String toString() {

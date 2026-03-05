@@ -22,6 +22,8 @@ public class TerminalBuffer {
     private final Deque<Line> screen     = new ArrayDeque<>();
     private final Deque<Line> scrollback = new ArrayDeque<>();
 
+    private CellAttributes currentAttributes = new CellAttributes();
+
     public TerminalBuffer(int width, int height) {
         this(width, height, 1000);
     }
@@ -37,6 +39,23 @@ public class TerminalBuffer {
     public int getHeight() { return height; }
     public int getScrollbackSize() { return scrollback.size(); }
     public int getTotalRows()      { return scrollback.size() + height; }
+
+    /** Set the attributes that will be applied to all subsequent edits. */
+    public void setAttributes(TermColor foreground, TermColor background, StyleFlags style) {
+        currentAttributes = new CellAttributes(foreground, background, style);
+    }
+
+    public void setAttributes(TermColor foreground) {
+        currentAttributes = new CellAttributes(foreground, TermColor.DEFAULT, new StyleFlags());
+    }
+
+    public void setAttributes(CellAttributes attributes) {
+        currentAttributes = attributes;
+    }
+
+    public CellAttributes getAttributes() {
+        return currentAttributes;
+    }
 
     @Override
     public String toString() {

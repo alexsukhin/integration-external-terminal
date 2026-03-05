@@ -127,6 +127,7 @@ public class TerminalBuffer {
                     cursorRow++;
                     cursorCol = 0;
                 } else {
+                    insertEmptyLine();
                     cursorCol = 0;
                     remaining = "";
                 }
@@ -145,6 +146,21 @@ public class TerminalBuffer {
     /** Fill the cursor row with empty cells. */
     public void fillLine() {
         fillLine(null);
+    }
+
+    /**
+     * Scroll the screen up by one line: the top line moves into scrollback
+     * and a blank line is appended at the bottom.
+     */
+    public void insertEmptyLine() {
+        pushToScrollback(screen.removeFirst());
+        screen.addLast(new Line(width));
+    }
+
+    private void pushToScrollback(Line line) {
+        if (maxScrollbackLines <= 0) return;
+        scrollback.addLast(line);
+        while (scrollback.size() > maxScrollbackLines) scrollback.removeFirst();
     }
 
     private List<Line> screenAsList() { return new ArrayList<>(screen); }

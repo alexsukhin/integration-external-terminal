@@ -22,6 +22,9 @@ public class TerminalBuffer {
     private final Deque<Line> screen     = new ArrayDeque<>();
     private final Deque<Line> scrollback = new ArrayDeque<>();
 
+    private int cursorCol = 0;
+    private int cursorRow = 0;
+
     private CellAttributes currentAttributes = new CellAttributes();
 
     public TerminalBuffer(int width, int height) {
@@ -57,10 +60,24 @@ public class TerminalBuffer {
         return currentAttributes;
     }
 
+    /** Move cursor to an absolute position, clamping to screen bounds. */
+    public void setCursor(int col, int row) {
+        cursorCol = Math.max(0, Math.min(col, width - 1));
+        cursorRow = Math.max(0, Math.min(row, height - 1));
+    }
+
+    public void moveCursorUp(int n)    { cursorRow = Math.max(0, cursorRow - n); }
+    public void moveCursorDown(int n)  { cursorRow = Math.min(height - 1, cursorRow + n); }
+    public void moveCursorLeft(int n)  { cursorCol = Math.max(0, cursorCol - n); }
+    public void moveCursorRight(int n) { cursorCol = Math.min(width - 1, cursorCol + n); }
+
+    public int getCursorCol() { return cursorCol; }
+    public int getCursorRow() { return cursorRow; }
+
     @Override
     public String toString() {
         return "TerminalBuffer(" + width + "x" + height +
                ", scrollback=" + scrollback.size() + "/" + maxScrollbackLines +
-               ", cursor=(0,0))";
+               ", cursor=(" + cursorCol + "," + cursorRow + "))";
     }
 }

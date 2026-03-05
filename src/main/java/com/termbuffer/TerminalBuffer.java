@@ -90,10 +90,61 @@ public class TerminalBuffer {
         cursorCol = Math.min(cursorCol, width - 1);
     }
 
+    /**
+     * Insert text at the current cursor position, shifting existing content right.
+     * Overflow wraps to the next line, scrolling if at the bottom.
+     */
+    public void insertText(String text) {
+        String remaining = text;
+        while (!remaining.isEmpty()) {
+            Line line = screenLine(cursorRow);
+
+            List<Cell> toInsert = new ArrayList<>();
+            int i = 0;
+            while (i < remaining.length()) {
+                char ch = remaining.charAt(i);
+                toInsert.add(new Cell(ch, currentAttributes, false, false));
+                i++;
+                if (cursorCol + toInsert.size() >= width) break;
+            }
+            remaining = remaining.substring(i);
+
+            int insertCount = toInsert.size();
+            Line newLine = new Line(width);
+            for (int c = 0; c < cursorCol; c++) newLine.set(c, line.get(c));
+            for (int c = 0; c < toInsert.size(); c++) {
+                if (cursorCol + c < width) newLine.set(cursorCol + c, toInsert.get(c));
+            }
+            for (int c = cursorCol; c < width - insertCount; c++) {
+                int dst = c + insertCount;
+                if (dst < width) newLine.set(dst, line.get(c));
+            }
+            setScreenLine(cursorRow, newLine);
+            cursorCol = Math.min(cursorCol + insertCount, width - 1);
+
+            if (!remaining.isEmpty()) {
+                if (cursorRow < height - 1) {
+                    cursorRow++;
+                    cursorCol = 0;
+                } else {
+                    cursorCol = 0;
+                    remaining = "";
+                }
+            }
+        }
+    }
+
     private List<Line> screenAsList() { return new ArrayList<>(screen); }
 
     private Line screenLine(int row) {
         return screenAsList().get(row);
+    }
+
+    private void setScreenLine(int row, Line line) {
+        List<Line> list = screenAsList();
+        list.set(row, line);
+        screen.clear();
+        screen.addAll(list);
     }
 
     @Override

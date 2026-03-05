@@ -196,8 +196,6 @@ class TerminalBufferTest {
         }
     }
 
-    // ── insertText ────────────────────────────────────────────────────────
-
     @Nested
     class InsertText {
         @Test void insertAtStartShiftsContentRight() {
@@ -327,8 +325,6 @@ class TerminalBufferTest {
             assertEquals("     ", buf.getLine(0));
         }
     }
-
-    // ── Content access ────────────────────────────────────────────────────
 
     @Nested
     class ContentAccess {

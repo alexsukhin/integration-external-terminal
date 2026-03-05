@@ -157,6 +157,17 @@ public class TerminalBuffer {
         screen.addLast(new Line(width));
     }
 
+    /** Blank every cell on every screen row. Cursor position is unchanged. */
+    public void clearScreen() {
+        for (Line line : screen) line.fill();
+    }
+
+    /** Blank the screen and discard all scrollback history. */
+    public void clearScreenAndScrollback() {
+        clearScreen();
+        scrollback.clear();
+    }
+
     private void pushToScrollback(Line line) {
         if (maxScrollbackLines <= 0) return;
         scrollback.addLast(line);

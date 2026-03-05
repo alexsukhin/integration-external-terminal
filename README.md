@@ -1,6 +1,6 @@
 # Terminal Buffer
 
-A terminal text buffer implementation in Java — the core data structure used by terminal emulators to store and display text. When a shell sends output, the buffer updates and the UI renders it.
+A terminal text buffer implementation in Java - the core data structure used by terminal emulators to store and display text. When a shell sends output, the buffer updates and the UI renders it.
 
 ## Requirements
 

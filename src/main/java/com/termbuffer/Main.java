@@ -2,24 +2,77 @@ package com.termbuffer;
 
 public class Main {
     public static void main(String[] args) {
-        TerminalBuffer buf = new TerminalBuffer(40, 10);
+        TerminalBuffer buf = new TerminalBuffer(50, 20);
+
+        buf.setAttributes(TermColor.BRIGHT_WHITE, TermColor.DEFAULT, new StyleFlags(true, false, false));
+        buf.setCursor(0, 0);
+        buf.writeText("=== TerminalBuffer Demo ===");
 
         buf.setAttributes(TermColor.BRIGHT_RED, TermColor.DEFAULT, new StyleFlags(true, false, false));
-        buf.setCursor(0, 0);
-        buf.writeText("Hello in RED!");
-
-        buf.setAttributes(TermColor.BRIGHT_GREEN, TermColor.DEFAULT, new StyleFlags(true, false, false));
         buf.setCursor(0, 2);
-        buf.writeText("Hello in GREEN!");
+        buf.writeText("writeText: bold red!");
 
-        buf.setAttributes(TermColor.BRIGHT_BLUE, TermColor.DEFAULT, new StyleFlags(true, false, false));
+        buf.setAttributes(TermColor.BRIGHT_GREEN, TermColor.DEFAULT, new StyleFlags(false, true, false));
+        buf.setCursor(0, 3);
+        buf.writeText("writeText: italic green!");
+
+        buf.setAttributes(TermColor.BRIGHT_YELLOW, TermColor.DEFAULT, new StyleFlags(false, false, true));
         buf.setCursor(0, 4);
-        buf.writeText("Hello in BLUE!");
+        buf.writeText("writeText: underline yellow!");
+
+        buf.setAttributes(TermColor.BRIGHT_CYAN, TermColor.DEFAULT, new StyleFlags(true, true, true));
+        buf.setCursor(0, 5);
+        buf.writeText("writeText: bold+italic+underline cyan!");
+
+        buf.setAttributes(TermColor.BRIGHT_YELLOW, TermColor.DEFAULT, new StyleFlags(false, false, false));
+        buf.setCursor(0, 6);
+        buf.writeText("insertText: [WORLD]");
+        buf.setCursor(12, 6);
+        buf.insertText("HELLO ");
+
+        buf.setAttributes(TermColor.CYAN, TermColor.DEFAULT, new StyleFlags());
+        buf.setCursor(0, 8);
+        buf.fillLine('-');
+
+        buf.setAttributes(TermColor.BRIGHT_MAGENTA, TermColor.DEFAULT, new StyleFlags(true, false, false));
+        buf.setCursor(0, 9);
+        buf.writeText("cursor movement: ");
+        buf.moveCursorRight(3);
+        buf.writeText("<-- moved right 3");
+
+        buf.setAttributes(TermColor.BRIGHT_CYAN, TermColor.DEFAULT, new StyleFlags(true, false, false));
+        buf.setCursor(0, 11);
+        buf.writeText("wide chars: 中文日本語");
+
+        buf.setAttributes(TermColor.BRIGHT_GREEN, TermColor.DEFAULT, new StyleFlags());
+        buf.setCursor(0, 13);
+        buf.writeText("line about to scroll into scrollback...");
+        buf.insertEmptyLine();
+
+        buf.setAttributes(TermColor.BRIGHT_WHITE, TermColor.DEFAULT, new StyleFlags());
+        buf.setCursor(0, 14);
+        buf.writeText("(line above scrolled off into scrollback)");
 
         buf.setAttributes(TermColor.BRIGHT_YELLOW, TermColor.DEFAULT, new StyleFlags(true, false, false));
-        buf.setCursor(0, 6);
-        buf.writeText("Hello in YELLOW!");
+        buf.setCursor(0, 16);
+        buf.writeText("before resize: " + buf.getWidth() + "x" + buf.getHeight());
+        buf.resize(60, 22);
+        buf.setCursor(0, 17);
+        buf.writeText("after resize:  " + buf.getWidth() + "x" + buf.getHeight());
 
+        buf.setAttributes(TermColor.BRIGHT_CYAN, TermColor.DEFAULT, new StyleFlags());
+        buf.setCursor(0, 19);
+        buf.writeText("scrollback lines: " + buf.getScrollbackSize());
+
+        buf.setAttributes(TermColor.CYAN, TermColor.DEFAULT, new StyleFlags());
+        buf.setCursor(0, 20);
+        buf.fillLine('-');
+
+        System.out.println("\n--- scrollback ---");
+        for (int i = 0; i < buf.getScrollbackSize(); i++) {
+            System.out.println(buf.getLine(i).stripTrailing());
+        }
+        System.out.println("--- screen ---");
         renderScreen(buf);
     }
 
@@ -29,13 +82,22 @@ public class Main {
             for (int col = 0; col < buf.getWidth(); col++) {
                 Character ch = buf.getChar(col, i);
                 CellAttributes attr = buf.getCellAttributes(col, i);
-                line.append(ansiColor(attr.foreground))
+                line.append(ansiStyle(attr))
                     .append(ch != null ? ch : ' ')
                     .append("\u001B[0m");
             }
             String trimmed = line.toString().stripTrailing();
             if (!trimmed.isEmpty()) System.out.println(trimmed);
         }
+    }
+
+    static String ansiStyle(CellAttributes attr) {
+        StringBuilder sb = new StringBuilder();
+        if (attr.style.bold)      sb.append("\u001B[1m");
+        if (attr.style.italic)    sb.append("\u001B[3m");
+        if (attr.style.underline) sb.append("\u001B[4m");
+        sb.append(ansiColor(attr.foreground));
+        return sb.toString();
     }
 
     static String ansiColor(TermColor color) {

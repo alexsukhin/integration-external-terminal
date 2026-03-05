@@ -168,6 +168,33 @@ public class TerminalBuffer {
         scrollback.clear();
     }
 
+    public Character getChar(int col, int row) {
+        if (col < 0 || col >= width) throw new IllegalArgumentException("Column " + col + " out of range");
+        return lineAt(row).get(col).ch;
+    }
+
+    public CellAttributes getCellAttributes(int col, int row) {
+        if (col < 0 || col >= width) throw new IllegalArgumentException("Column " + col + " out of range");
+        return lineAt(row).get(col).attributes;
+    }
+
+    public String getLine(int row) {
+        return lineAt(row).asString();
+    }
+
+    public String getScreenContent() {
+        StringBuilder sb = new StringBuilder();
+        for (Line line : screen) sb.append(line.asString()).append('\n');
+        return sb.toString();
+    }
+
+    public String getFullContent() {
+        StringBuilder sb = new StringBuilder();
+        for (Line line : scrollback) sb.append(line.asString()).append('\n');
+        for (Line line : screen)     sb.append(line.asString()).append('\n');
+        return sb.toString();
+    }
+
     private void pushToScrollback(Line line) {
         if (maxScrollbackLines <= 0) return;
         scrollback.addLast(line);
@@ -185,6 +212,14 @@ public class TerminalBuffer {
         list.set(row, line);
         screen.clear();
         screen.addAll(list);
+    }
+
+    private Line lineAt(int row) {
+        int total = getTotalRows();
+        if (row < 0 || row >= total)
+            throw new IllegalArgumentException("Row " + row + " out of range 0..<" + total);
+        if (row < scrollback.size()) return new ArrayList<>(scrollback).get(row);
+        return screenAsList().get(row - scrollback.size());
     }
 
     @Override

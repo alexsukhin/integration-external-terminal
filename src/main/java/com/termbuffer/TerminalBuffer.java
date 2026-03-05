@@ -84,8 +84,18 @@ public class TerminalBuffer {
         for (int i = 0; i < text.length(); i++) {
             if (cursorCol >= width) break;
             char ch = text.charAt(i);
-            screenLine(cursorRow).set(cursorCol, new Cell(ch, currentAttributes, false, false));
+            boolean isWide = isWideChar(ch);
+            if (isWide && cursorCol + 1 >= width) break;
+
+            screenLine(cursorRow).set(cursorCol, new Cell(ch, currentAttributes, isWide, false));
             cursorCol++;
+
+            if (isWide) {
+                if (cursorCol < width) {
+                    screenLine(cursorRow).set(cursorCol, new Cell(null, currentAttributes, false, true));
+                }
+                cursorCol++;
+            }
         }
         cursorCol = Math.min(cursorCol, width - 1);
     }
@@ -103,7 +113,9 @@ public class TerminalBuffer {
             int i = 0;
             while (i < remaining.length()) {
                 char ch = remaining.charAt(i);
-                toInsert.add(new Cell(ch, currentAttributes, false, false));
+                boolean isWide = isWideChar(ch);
+                toInsert.add(new Cell(ch, currentAttributes, isWide, false));
+                if (isWide) toInsert.add(new Cell(null, currentAttributes, false, true));
                 i++;
                 if (cursorCol + toInsert.size() >= width) break;
             }
@@ -195,6 +207,41 @@ public class TerminalBuffer {
         return sb.toString();
     }
 
+    /**
+     * Resize the screen to newWidth x newHeight.
+     *
+     * Lines wider than newWidth are truncated; shorter lines are padded.
+     * Shrinking height pushes top screen lines into scrollback.
+     * Growing height appends blank lines at the bottom.
+     * The cursor is clamped to the new bounds.
+     */
+    public void resize(int newWidth, int newHeight) {
+        if (newWidth <= 0 || newHeight <= 0)
+            throw new IllegalArgumentException("Dimensions must be positive");
+
+        List<Line> sbList     = new ArrayList<>(scrollback);
+        List<Line> screenList = new ArrayList<>(screen);
+
+        sbList.replaceAll(l     -> adaptLine(l, newWidth));
+        screenList.replaceAll(l -> adaptLine(l, newWidth));
+
+        scrollback.clear();
+        scrollback.addAll(sbList);
+        screen.clear();
+        screen.addAll(screenList);
+
+        if (newHeight > height) {
+            for (int i = 0; i < newHeight - height; i++) screen.addLast(new Line(newWidth));
+        } else if (newHeight < height) {
+            for (int i = 0; i < height - newHeight; i++) pushToScrollback(screen.removeFirst());
+        }
+
+        width  = newWidth;
+        height = newHeight;
+        cursorCol = Math.min(cursorCol, width - 1);
+        cursorRow = Math.min(cursorRow, height - 1);
+    }
+
     private void pushToScrollback(Line line) {
         if (maxScrollbackLines <= 0) return;
         scrollback.addLast(line);
@@ -220,6 +267,32 @@ public class TerminalBuffer {
             throw new IllegalArgumentException("Row " + row + " out of range 0..<" + total);
         if (row < scrollback.size()) return new ArrayList<>(scrollback).get(row);
         return screenAsList().get(row - scrollback.size());
+    }
+
+    private Line adaptLine(Line src, int newWidth) {
+        Line dst = new Line(newWidth);
+        for (int c = 0; c < Math.min(src.width, newWidth); c++) dst.set(c, src.get(c));
+        return dst;
+    }
+
+    /**
+     * Returns true for characters that occupy two terminal columns.
+     * Covers CJK Unified Ideographs and common fullwidth ranges.
+     * A full implementation would use Unicode East Asian Width data.
+     */
+    private boolean isWideChar(char ch) {
+        int cp = ch;
+        return (cp >= 0x1100 && cp <= 0x115F) ||
+               (cp >= 0x2E80 && cp <= 0x303E) ||
+               (cp >= 0x3040 && cp <= 0x33FF) ||
+               (cp >= 0x3400 && cp <= 0x4DBF) ||
+               (cp >= 0x4E00 && cp <= 0x9FFF) ||
+               (cp >= 0xAC00 && cp <= 0xD7AF) ||
+               (cp >= 0xF900 && cp <= 0xFAFF) ||
+               (cp >= 0xFE10 && cp <= 0xFE1F) ||
+               (cp >= 0xFE30 && cp <= 0xFE4F) ||
+               (cp >= 0xFF00 && cp <= 0xFF60) ||
+               (cp >= 0xFFE0 && cp <= 0xFFE6);
     }
 
     @Override

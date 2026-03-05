@@ -134,6 +134,19 @@ public class TerminalBuffer {
         }
     }
 
+    /**
+     * Fill the entire row the cursor is on with ch (or empty if null),
+     * using the current attributes.
+     */
+    public void fillLine(Character ch) {
+        screenLine(cursorRow).fill(new Cell(ch, currentAttributes, false, false));
+    }
+
+    /** Fill the cursor row with empty cells. */
+    public void fillLine() {
+        fillLine(null);
+    }
+
     private List<Line> screenAsList() { return new ArrayList<>(screen); }
 
     private Line screenLine(int row) {
